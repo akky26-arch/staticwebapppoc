@@ -7,4 +7,4 @@ FROM eclipse-temurin:21
 WORKDIR /app
 COPY --from=build /app/target/auth-api-0.0.1-SNAPSHOT.jar .
 EXPOSE 8080
-CMD ["java", "-jar", "/app/target/auth-api-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "auth-api-0.0.1-SNAPSHOT.jar"]
