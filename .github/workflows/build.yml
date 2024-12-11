@@ -34,14 +34,14 @@ jobs:
     - name: SonarQube Scan for react
       uses: sonarsource/sonarqube-scan-action@master
       with:
-        projectBaseDir: Frontend/
+        projectBaseDir: ./Frontend
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
     - name: SonarQube Scan for java
       uses: sonarsource/sonarqube-scan-action@master
       with:
-        projectBaseDir: BackendSpringBoot/
+        projectBaseDir: ./BackendSpringBoot
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
