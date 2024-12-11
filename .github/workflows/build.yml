@@ -33,6 +33,7 @@ jobs:
         cd ..
   scan:
     runs-on: ubuntu-latest
+    needs: build
     steps:
     - name: SonarQube Scan for react
       uses: sonarsource/sonarqube-scan-action@master
