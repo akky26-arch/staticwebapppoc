@@ -1,4 +1,4 @@
-name: Sonar Scanner
+name: Sonar Scanner for project
 on:
   push:
     branches:
