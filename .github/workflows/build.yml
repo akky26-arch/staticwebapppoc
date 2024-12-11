@@ -15,7 +15,7 @@ jobs:
         node-version: 20
     - name: install packages
       run: |
-        cd FrontEnd
+        cd Frontend
         npm install
         npm run build
         cd ..
