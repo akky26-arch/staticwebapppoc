@@ -1,37 +1,50 @@
-name: Build
-
+name: Sonar Scan
 on:
   push:
     branches:
-      - master
-
-
+    - master
 jobs:
   build:
-    name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Set up JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Cache SonarQube packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar
-          restore-keys: ${{ runner.os }}-sonar
-      - name: Cache Maven packages
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build and analyze
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=currency-converter
+    - name: checkout the code repo
+      uses: actions/checkout@v4
+    - name: Setup node & npm
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - name: install packages
+      run: |
+        cd FrontEnd
+        npm install
+        npm run build
+        cd ..
+    - name: setup java
+      uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: "21"
+    - name: Install Maven
+      run: sudo apt-get install -y maven
+    - name: Build project with Maven
+      run: |
+        cd BackendSpringBoot
+        mvn clean install -DskipTests
+        cd ..
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: SonarQube Scan for react
+      uses: sonarsource/sonarqube-scan-action@master
+      with:
+        projectBaseDir: Frontend/
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+    - name: SonarQube Scan for java
+      uses: sonarsource/sonarqube-scan-action@master
+      with:
+        projectBaseDir: BackendSpringBoot/
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
