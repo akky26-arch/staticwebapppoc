@@ -4,44 +4,63 @@ on:
     branches:
     - master
 jobs:
-  build:
+  trivy-fs-scan:
     runs-on: ubuntu-latest
     steps:
     - name: checkout the code repo
       uses: actions/checkout@v4
-    - name: Setup node & npm
-      uses: actions/setup-node@v4
+    - name: Run Trivy vulnerability scanner for Frontend
+      uses: aquasecurity/trivy-action@0.28.0
       with:
-        node-version: 20
-    - name: install packages
-      run: |
-        cd Frontend
-        npm install
-        npm run build
-        cd ..
-    - name: setup java
-      uses: actions/setup-java@v4
+        scan-type: 'fs'
+        scan-ref: './Frontend'
+        format: 'json'
+        output: './trivy-fs-reports/frontend-trivy-report.json'
+    - name: Run Trivy vulnerability scanner for Backend
+      uses: aquasecurity/trivy-action@0.28.0
       with:
-        distribution: "temurin"
-        java-version: "21"
-    - name: Install Maven
-      run: sudo apt-get install -y maven
-    - name: Build project with Maven
-      run: |
-        cd BackendSpringBoot
-        mvn clean install -DskipTests
-        cd ..
-    - name: SonarQube Scan for react
-      uses: sonarsource/sonarqube-scan-action@master
+        scan-type: 'fs'
+        scan-ref: './Backend'
+        format: 'json'
+        output: './trivy-fs-reports/backend-trivy-report.json'
+    - name: Upload Trivy fs scan results
+      uses: actions/upload-artifact@v4
       with:
-        projectBaseDir: ./Frontend
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-    - name: SonarQube Scan for java
-      uses: sonarsource/sonarqube-scan-action@master
-      with:
-        projectBaseDir: ./BackendSpringBoot
-      env:
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        name: Trivy-fs-scan-report
+        path: ${{github.workspace}}/trivy-fs-reports/*
+    # - name: Setup node & npm
+    #   uses: actions/setup-node@v4
+    #   with:
+    #     node-version: 20
+    # - name: install packages
+    #   run: |
+    #     cd Frontend
+    #     npm install
+    #     npm run build
+    #     cd ..
+    # - name: setup java
+    #   uses: actions/setup-java@v4
+    #   with:
+    #     distribution: "temurin"
+    #     java-version: "21"
+    # - name: Install Maven
+    #   run: sudo apt-get install -y maven
+    # - name: Build project with Maven
+    #   run: |
+    #     cd BackendSpringBoot
+    #     mvn clean install -DskipTests
+    #     cd ..
+    # - name: SonarQube Scan for react
+    #   uses: sonarsource/sonarqube-scan-action@master
+    #   with:
+    #     projectBaseDir: ./Frontend
+    #   env:
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+    # - name: SonarQube Scan for java
+    #   uses: sonarsource/sonarqube-scan-action@master
+    #   with:
+    #     projectBaseDir: ./BackendSpringBoot
+    #   env:
+    #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    #     SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
