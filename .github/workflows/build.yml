@@ -1,4 +1,4 @@
-name: Sonar Scanner for project
+name: Trivy fs scan
 on:
   push:
     branches:
@@ -15,19 +15,21 @@ jobs:
         scan-type: 'fs'
         scan-ref: './Frontend'
         format: 'json'
-        output: './trivy-fs-reports/frontend-trivy-report.json'
+        output: 'frontend-trivy-report.json'
     - name: Run Trivy vulnerability scanner for Backend
       uses: aquasecurity/trivy-action@0.28.0
       with:
         scan-type: 'fs'
         scan-ref: './Backend'
         format: 'json'
-        output: './trivy-fs-reports/backend-trivy-report.json'
+        output: 'backend-trivy-report.json'
     - name: Upload Trivy fs scan results
       uses: actions/upload-artifact@v4
       with:
         name: Trivy-fs-scan-report
-        path: ${{github.workspace}}/trivy-fs-reports/*
+        path: |
+          frontend-trivy-report.json
+          backend-trivy-report.json
     # - name: Setup node & npm
     #   uses: actions/setup-node@v4
     #   with:
