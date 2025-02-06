@@ -55,18 +55,27 @@ public class SecurityConfiguration {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(corsUrl)); // Adjust based on your frontend origin
-        configuration.setAllowedMethods(List.of("GET", "POST", "OPTIONS", "DELETE", "PUT"));
-        configuration.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        // CORS configuration for all paths except /actuator
+        CorsConfiguration apiCorsConfiguration = new CorsConfiguration();
+        apiCorsConfiguration.setAllowedOrigins(List.of(corsUrl)); // Adjust based on your frontend origin
+        apiCorsConfiguration.setAllowedMethods(List.of("GET", "POST", "OPTIONS", "DELETE", "PUT"));
+        apiCorsConfiguration.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept"));
+        apiCorsConfiguration.setAllowCredentials(true);
+        apiCorsConfiguration.setMaxAge(3600L);
 
+        // CORS configuration for /actuator endpoint (allow any origin)
+        CorsConfiguration actuatorCorsConfiguration = new CorsConfiguration();
+        actuatorCorsConfiguration.setAllowedOrigins(List.of("*")); // Allow all origins for actuator endpoints
+        actuatorCorsConfiguration.setAllowedMethods(List.of("GET")); // Allow only GET requests for /actuator
+        actuatorCorsConfiguration.setAllowedHeaders(List.of("Content-Type", "Authorization", "Accept"));
+        actuatorCorsConfiguration.setAllowCredentials(false);
+        actuatorCorsConfiguration.setMaxAge(3600L);
+
+        // Register both configurations
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/actuator/**", actuatorCorsConfiguration);
+        source.registerCorsConfiguration("/**", apiCorsConfiguration);  // Default CORS configuration for other endpoints
+
         return source;
     }
-
-
-
 }
