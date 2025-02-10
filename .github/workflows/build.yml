@@ -117,12 +117,36 @@ jobs:
           docker buildx build -t frontend:latest ./Frontend
           docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/cc:frontend-$IMAGE_TAG
           docker push ${{ steps.login-ecr.outputs.registry }}/cc:frontend-$IMAGE_TAG
+ 
+      - name: Run Trivy Security Scan on frontend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/cc:frontend-$IMAGE_TAG
+          format: "json"
+          output: "Trivy/frontend-trivy-report.json"
+          ignore-unfixed: true
+          vuln-type: "os,library"
 
       - name: Build, tag & push backend Docker image
         run: |
           docker buildx build -t backend:latest ./Backend
           docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/cc:backend-$IMAGE_TAG
           docker push ${{ steps.login-ecr.outputs.registry }}/cc:backend-$IMAGE_TAG
+
+      - name: Run Trivy Security Scan on backend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/cc:backend-$IMAGE_TAG
+          format: "json"
+          output: "Trivy/backend-trivy-report.json"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+
+      - name: Upload trivy image scan results
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trivy-Reports
+          path: ${{github.workspace}}/Trivy
          
       
           
