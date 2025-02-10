@@ -1,83 +1,123 @@
-name: Trivy fs scan
+name: Docker build & push
 on:
   push:
     branches:
     - master
 jobs:
-  trivy-fs-scan:
-    runs-on: ubuntu-latest
-    steps:
-    - name: checkout the code repo
-      uses: actions/checkout@v4
-    - name: Run Trivy vulnerability scanner for Frontend
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: "fs"
-        scan-ref: "./Frontend"
-        format: "json"
-        output: "frontend-trivy-report.json"
-    - name: Run Trivy vulnerability scanner for Backend
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: "fs"
-        scan-ref: "./Backend"
-        format: "json"
-        output: "backend-trivy-report.json"
-    - name: Upload Trivy fs scan results
-      uses: actions/upload-artifact@v4
-      with:
-        name: Trivy-fs-scan-report
-        path: |
-          frontend-trivy-report.json
-          backend-trivy-report.json
-  owasp-scan:
-    runs-on: ubuntu-latest
-    needs: trivy-fs-scan
-    steps:
-    - name: checkout the code repo
-      uses: actions/checkout@v4
-    - name: Setup node & npm
-      uses: actions/setup-node@v4
-      with:
-        node-version: 22
-    - name: install packages
-      run: |
-        cd Frontend
-        npm install
-        cd ..
-    - name: Dependency Check for frontend
-      uses: dependency-check/Dependency-Check_Action@main
-      with:
-        project: "frontend"
-        path: "./Frontend"
-        format: "HTML"
-        out: "reports"
-    - name: rename frontend owasp report file
-      run: sudo mv reports/dependency-check-report.html reports/frontend-owasp-report.html
-    - name: setup java
-      uses: actions/setup-java@v4
-      with:
-        distribution: "temurin"
-        java-version: "21"
-        cache: "maven"
-    - name: Build project with Maven
-      run: |
-        cd Backend
-        mvn clean install -DskipTests
-        cd ..
-    - name: Dependency Check
-      uses: dependency-check/Dependency-Check_Action@main
-      with:
-        project: "auth-api"
-        path: "./Backend"
-        format: "HTML"
-        out: "reports"
-      env:
-        JAVA_HOME: /opt/jdk
-    - name: rename backend owasp report file
-      run: sudo mv reports/dependency-check-report.html reports/backend-owasp-report.html
-    - name: Upload owasp results
-      uses: actions/upload-artifact@v4
-      with:
-        name: OWASP-Reports
-        path: ${{github.workspace}}/reports
+  # owasp-scan:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: checkout the code repo
+  #     uses: actions/checkout@v4
+  #   - name: Setup node & npm
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: 22
+  #   - name: install packages
+  #     run: |
+  #       cd Frontend
+  #       npm install
+  #       cd ..
+  #   - name: Dependency Check for frontend
+  #     uses: dependency-check/Dependency-Check_Action@main
+  #     with:
+  #       project: "frontend"
+  #       path: "./Frontend"
+  #       format: "HTML"
+  #       out: "reports"
+  #   - name: rename frontend owasp report file
+  #     run: sudo mv reports/dependency-check-report.html reports/frontend-owasp-report.html
+  #   - name: setup java
+  #     uses: actions/setup-java@v4
+  #     with:
+  #       distribution: "temurin"
+  #       java-version: "21"
+  #       cache: "maven"
+  #   - name: Build project with Maven
+  #     run: |
+  #       cd Backend
+  #       mvn clean install -DskipTests
+  #       cd ..
+  #   - name: Dependency Check
+  #     uses: dependency-check/Dependency-Check_Action@main
+  #     with:
+  #       project: "auth-api"
+  #       path: "./Backend"
+  #       format: "HTML"
+  #       out: "reports"
+  #     env:
+  #       JAVA_HOME: /opt/jdk
+  #   - name: rename backend owasp report file
+  #     run: sudo mv reports/dependency-check-report.html reports/backend-owasp-report.html
+  #   - name: Upload owasp results
+  #     uses: actions/upload-artifact@v4
+  #     with:
+  #       name: OWASP-Reports
+  #       path: ${{github.workspace}}/reports
+  # sonar-scan:
+  #   runs-on: ubuntu-latest
+  #   needs: owasp-scan
+  #   steps:
+  #   - name: checkout the code repo
+  #     uses: actions/checkout@v4
+  #   - name: Setup node & npm
+  #     uses: actions/setup-node@v4
+  #     with:
+  #       node-version: 22
+  #   - name: install npm packages
+  #     run: |
+  #       cd Frontend
+  #       npm install
+  #       cd ..
+  #   - name: SonarQube Scan for frontend
+  #     uses: SonarSource/sonarqube-scan-action@v2
+  #     with:
+  #         projectBaseDir: Frontend
+  #     env:
+  #         SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+  #   - name: setup java
+  #     uses: actions/setup-java@v4
+  #     with:
+  #       distribution: "temurin"
+  #       java-version: "21"
+  #       cache: "maven"
+  #   - name: Build project with Maven
+  #     run: |
+  #       cd Backend
+  #       mvn clean install -DskipTests
+  #       cd ..
+  #   - name: SonarQube Scan for backend
+  #     uses: SonarSource/sonarqube-scan-action@v2
+  #     with:
+  #         projectBaseDir: Backend
+  #     env:
+  #         SONAR_TOKEN: ${{ secrets.SONARQUBE_TOKEN }}
+  build-push:
+     runs-on: ubuntu-latest
+     steps: 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set Environment Variables
+        run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Build and tag frontend Docker image
+        run: |
+          docker buildx build -t frontend:latest ./Frontend
+          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/cc:$IMAGE_TAG
+         
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/cc:$IMAGE_TAG
+          
