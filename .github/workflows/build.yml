@@ -117,6 +117,9 @@ jobs:
           docker buildx build -t frontend:latest ./Frontend
           docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/cc:frontend-${{ env.IMAGE_TAG }}
           docker push ${{ steps.login-ecr.outputs.registry }}/cc:frontend-${{ env.IMAGE_TAG }}
+
+      - name: Make Trivy folder
+        run: mkdir Trivy
  
       - name: Run Trivy Security Scan on frontend image
         uses: aquasecurity/trivy-action@master
