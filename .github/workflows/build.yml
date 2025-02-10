@@ -112,12 +112,17 @@ jobs:
       - name: Set Environment Variables
         run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Build and tag frontend Docker image
+      - name: Build, tag & push frontend Docker image
         run: |
           docker buildx build -t frontend:latest ./Frontend
-          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/cc:$IMAGE_TAG
-         
-      - name: Push Docker image to ECR
+          docker tag frontend:latest ${{ steps.login-ecr.outputs.registry }}/cc:frontend-$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/cc:frontend-$IMAGE_TAG
+
+      - name: Build, tag & push backend Docker image
         run: |
-          docker push ${{ steps.login-ecr.outputs.registry }}/cc:$IMAGE_TAG
+          docker buildx build -t backend:latest ./Backend
+          docker tag backend:latest ${{ steps.login-ecr.outputs.registry }}/cc:backend-$IMAGE_TAG
+          docker push ${{ steps.login-ecr.outputs.registry }}/cc:backend-$IMAGE_TAG
+         
+      
           
