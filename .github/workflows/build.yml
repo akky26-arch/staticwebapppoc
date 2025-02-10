@@ -115,6 +115,10 @@ jobs:
     - name: Set Environment Variables
       run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
+    - name: Set IMAGE_TAG output
+      id: set-image-tag
+      run: echo "::set-output name=IMAGE_TAG::${{ env.IMAGE_TAG }}"
+
     - name: Build, tag & push frontend Docker image
       run: |
         docker buildx build -t frontend:latest ./Frontend
@@ -167,15 +171,15 @@ jobs:
     - name: Set Environment Variables
       run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
     - name: Update frontend docker image in values.yaml
-      run: sed -i "s+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:frontend-.*+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:frontend-${{ env.IMAGE_TAG }}+g" values.yaml
+      run: sed -i "s+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:frontend-.*+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:frontend-${{ needs.build-push-trivy-scan.outputs.IMAGE_TAG }}+g" values.yaml
     - name: Update backend docker image in values.yaml
-      run: sed -i "s+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:backend-.*+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:backend-${{ env.IMAGE_TAG }}+g" values.yaml
+      run: sed -i "s+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:backend-.*+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:backend-${{ needs.build-push-trivy-scan.outputs.IMAGE_TAG }}+g" values.yaml
     - name: Commit updated values.yaml
       run: |
         git config --global user.name "github-actions"
         git config --global user.email "github-actions@github.com"
         git add .
-        git commit -m "Update frontend and backend image tags to ${{ env.IMAGE_TAG }}"
+        git commit -m "Update frontend and backend image tags to ${{ needs.build-push-trivy-scan.outputs.IMAGE_TAG }}"
         git push origin master
 
       
