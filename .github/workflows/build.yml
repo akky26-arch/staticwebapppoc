@@ -164,6 +164,8 @@ jobs:
         repository: rushiketmodak1/currency-converter-helm-chart
         ref: master
         token: ${{ secrets.GIT_TOKEN }}
+    - name: Set Environment Variables
+      run: echo "IMAGE_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
     - name: Update frontend docker image in values.yaml
       run: sed -i "s+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:frontend-.*+296062564275.dkr.ecr.ap-south-1.amazonaws.com/cc:frontend-${{ env.IMAGE_TAG }}+g" values.yaml
     - name: Update backend docker image in values.yaml
