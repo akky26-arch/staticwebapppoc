@@ -117,8 +117,8 @@ jobs:
     - name: Get and Set Commit SHA
       id: get_sha
       run: |
-        echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
-        echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
+        echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
 
     - name: Build, tag & push frontend Docker image
       run: |
