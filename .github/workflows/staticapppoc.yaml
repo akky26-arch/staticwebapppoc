@@ -1,0 +1,89 @@
+name: Build and Deploy to TEST
+
+run-name: ${{ github.actor }} is building project ${{ github.repository }} and deploying to test
+
+on:
+  workflow_dispatch:
+
+# 🔐 REQUIRED to create/update Git tags
+permissions:
+  contents: write
+
+concurrency:
+  group: qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Build-And-Deploy-To-Test:
+    runs-on: [ubuntu-latest]
+    environment: test
+
+    steps:
+      # Checkout source code
+      # -----------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------
+      # Setup Node.js
+      # -----------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22.12.0
+
+      - name: NPM Commands to Install, Build
+        run: |
+          cd ./Frontend
+          npm install
+          npm run build
+      # -----------------------------------
+      # Create or Update QA Git Tag
+      # -----------------------------------
+      - name: Create or Update QA Tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const TAG_NAME = 'test';
+
+            try {
+              // Try to update the tag if it already exists
+              await github.rest.git.updateRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `tags/${TAG_NAME}`,
+                sha: context.sha,
+                force: true
+              });
+              console.log(`Updated tag '${TAG_NAME}'`);
+            } catch (error) {
+              // 422 = tag does not exist → create it
+              if (error.status === 422) {
+                await github.rest.git.createRef({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  ref: `refs/tags/${TAG_NAME}`,
+                  sha: context.sha
+                });
+                console.log(`Created tag '${TAG_NAME}'`);
+              } else {
+                throw error;
+              }
+            }
+
+      # -----------------------------------
+      # Install Azure Static Web Apps CLI
+      # -----------------------------------
+      - name: Install Azure SWA CLI
+        run: |
+          npm install -g @azure/static-web-apps-cli
+          swa --version
+
+      # -----------------------------------
+      # Deploy to Azure Static Web App (QA)
+      # -----------------------------------
+      - name: Deploy Static Webapp
+        id: deploy
+        run: |
+          swa deploy ./dist/ --deployment-token ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_TEST }} ---env Production
+    
