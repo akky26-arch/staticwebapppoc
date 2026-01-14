@@ -85,5 +85,5 @@ jobs:
       - name: Deploy Static Webapp
         id: deploy
         run: |
-          swa deploy ./dist/ --deployment-token ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_TEST }} ---env Production
+          swa deploy ./dist/ --deployment-token ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_TEST }} --env Production
     
